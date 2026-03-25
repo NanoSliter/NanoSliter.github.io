@@ -1,20 +1,79 @@
+/* Grundlegende Seitenstile */
 body {
     margin: 0;
     padding: 0;
     display: flex;
- justify-content: center;
+    justify-content: center;
     align-items: center;
     height: 100vh;
-    background-color: #000;
-    font-family: sans-serif;
-    color: white;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #fff;
+    overflow: hidden;
 }
 
+/* Startbildschirm */
 #startScreen {
     text-align: center;
+    background: rgba(0, 0, 0, 0.: 30px;
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    max-width: 400px;
+    width: 100%;
+    animation: glow 2s infinite alternate;
 }
 
+@keyframes glow {
+    from {
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+    }
+    to {
+        box-shadow: 0 0 40px rgba(0, 255, 255, 0.8);
+    }
+}
+
+#startScreen h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    color: #00ffcc;
+    text-shadow: 0 0 10px rgba(0, 255, 204, 0.7);
+}
+
+#startScreen input, #startScreen select {
+    width: 80%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 2px solid #00ffcc;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 1rem;
+}
+
+#startScreen button {
+    background: linear-gradient(45deg, #00c6ff, #0072ff);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-size: 1.1rem;
+    border-radius: 50px;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 0 15px rgba(0, 114, 255, 0.6);
+}
+
+#startScreen button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(0, 114, 255, 0.9);
+}
+
+/* Spielcanvas */
 #gameCanvas {
-    border: 2px solid #fff;
+    border: 3px solid #00ffcc;
+    border-radius: 8px;
     display: none;
+    box-shadow: 0 0 30px rgba(0, 255, 204, 0.5);
+    background-color: #0f1c2e;
 }
