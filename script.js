@@ -1,5 +1,5 @@
 // Tausche diese Adresse gegen deine echte Server-URL aus, wenn du ihn hochgeladen hast!
-const SERVER_URL = 'nanosliter-github-io.railway.internal'; // Beispiel
+const SERVER_URL = 'nanoslitergithubio-production.up.railway.app'; // Beispiel
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
