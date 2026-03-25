@@ -2,21 +2,42 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Nano Snake Game</title>
+    <title>Nano Snake - Multiplayer Spiel</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Startbildschirm -->
     <div id="startScreen">
-        <h1>Nano Snake Game</h1>
-        <input type="text" id="playerName" placeholder="Name eingeben">
-        <label>Server wählen:</label>
-        <select id="serverSelect"></select>
-        <button onclick="joinGame()">Spielen</button>
+        <div class="logo">
+            <h1>NANO SNAKE</h1>
+            <p>Die ultimative Schlangenarena!</p>
+        </div>
+
+        <div class="form-container">
+            <input type="text" id="playerName" placeholder="Gib deinen Schlangennamen ein">
+            <br>
+            <label for="serverSelect">Wähle einen Server:</label>
+            <select id="serverSelect"></select>
+            <br>
+            <button onclick="joinGame()">SPIEL STARTEN</button>
+        </div>
+
+        <div class="info-box">
+            <h3>Features:</h3>
+            <ul>
+                <li>100 Server mit jeweils bis zu 15 Spielern</li>
+                <li>Power-ups & Bots</li>
+                <li>Freundesliste & Positions-Anzeige</li>
+                <li>Nukte nach Tod</li>
+                <li>Upgrades kaufen</li>
+            </ul>
+        </div>
     </div>
 
+    <!-- Spielbereich -->
     <canvas id="gameCanvas" width="800" height="600"></canvas>
 
-    <!-- Hier verbindest du dich mit deinem externen Server -->
+    <!-- Socket.io CDN -->
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="script.js"></script>
 </body>
