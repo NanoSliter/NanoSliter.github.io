@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Nano Snake Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="startScreen">
+        <h1>Nano Snake Game</h1>
+        <input type="text" id="playerName" placeholder="Name eingeben">
+        <label>Server wählen:</label>
+        <select id="serverSelect"></select>
+        <button onclick="joinGame()">Spielen</button>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <!-- Hier verbindest du dich mit deinem externen Server -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
