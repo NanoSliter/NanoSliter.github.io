@@ -2,34 +2,23 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Nano Sliter v3</title>
+    <title>Nano Sliter — P2P Multiplayer</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="startScreen">
-        <h1>🐍 Nano Sliter v3</h1>
-        <input type="text" id="playerName" placeholder="Name eingeben">
-        <select id="serverSelect"></select>
-        <button onclick="joinGame()">Spielen</button>
+        <h1>🐍 Nano Sliter v5 — P2P</h1>
+        <input type="text" id="nickname" placeholder="Name" maxlength="12">
+        <input type="text" id="room" placeholder="Raumname (z.B. lobby1)" value="lobby1">
+        <button onclick="joinRoom()">Spielen</button>
     </div>
-
-    <canvas id="gameCanvas" width="1200" height="800"></canvas>
-
+    <canvas id="game" width="1200" height="800"></canvas>
     <div id="ui">
-        <div>Punkte: <span id="points">0</span></div>
-        <div>Länge: <span id="length">5</span></div>
-        <button onclick="openShop()">🛒 Shop</button>
-        <button onclick="openFriends()">👥 Freunde</button>
+        Punkte: <span id="points">0</span> | Länge: <span id="length">5</span>
     </div>
 
-    <div id="shopModal" class="modal">
-        <div><button onclick="buyUpgrade('size')">Größe +1 (300 Pkt)</button></div>
-        <div><button onclick="buyUpgrade('speed')">Geschwindigkeit +1 (500 Pkt)</button></div>
-        <div><button onclick="buyBot()">Bot kaufen (1000 Pkt)</button></div>
-        <button onclick="closeModal()">Schließen</button>
-    </div>
-
-    <script src="/socket.io/socket.io.js"></script>
+    <!-- SimplePeer -->
+    <script src="https://cdn.jsdelivr.net/npm/simple-peer@9.11.1/min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
