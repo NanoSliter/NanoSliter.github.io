@@ -11,7 +11,7 @@ const io = socketIo(server, {
     }
 });
 
-// Serve static files from current directory
+// ✅ RICHTIG: app.use(), nicht .use()
 app.use(express.static('.'));
 
 // Game data
@@ -55,7 +55,8 @@ io.on('connection', (socket) => {
         }
 
         // Create player with snake segments
-        const =        for (let i = 0; i < 5; i++) {
+        const segments = [];
+        for (let i = 0; i < 5; i++) {
             segments.push({
                 x: Math.random() * 800 + 100,
                 y: Math.random() * 400 + 100,
@@ -132,7 +133,7 @@ io.on('connection', (socket) => {
         game.foods = game.foods.filter(food => {
             if (dist(player, food) < player.size + 4) {
                 player.points += 10;
-                player.size += 02;
+                player.size += 0.2;
                 player.segments.push({
                     x: player.segments[player.segments.length - 1].x,
                     y: player.segments[player.segments.length - 1].y,
