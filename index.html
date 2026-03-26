@@ -2,40 +2,91 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Nano Snake - Multiplayer Spiel</title>
+    <title>Nano Sliter - Multiplayer Snake</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <!-- Startbildschirm -->
     <div id="startScreen">
         <div class="logo">
-            <h1>NANO SNAKE</h1>
-            <p>Die ultimative Schlangenarena!</p>
+            <h1>NANO SLITER</h1>
+            <p>Die ultimative Schlange-Arena</p>
         </div>
 
-        <div class="form-container">
-            <input type="text" id="playerName" placeholder="Gib deinen Schlangennamen ein">
-            <br>
-            <label for="serverSelect">Wähle einen Server:</label>
-            <select id="serverSelect"></select>
-            <br>
-            <button onclick="joinGame()">SPIEL STARTEN</button>
+        <div class="input-group">
+            <input type="text" id="nickname" placeholder="Wähle einen Spitznamen..." maxlength="12">
+            <select id="serverSelect">
+                <option value="0">Server 1 (Latenz: ? ms)</option>
+                <option value="1">Server 2 (Latenz: ? ms)</option>
+                <option value="2">Server 3 (Latenz: ? ms)</option>
+            </select>
+            <button onclick="joinGame()">▶️ SPIEL STARTEN</button>
         </div>
 
-        <div class="info-box">
-            <h3>Features:</h3>
+        <div class="features">
+            <h3>So spielst du:</h3>
             <ul>
-                <li>100 Server mit jeweils bis zu 15 Spielern</li>
-                <li>Power-ups & Bots</li>
-                <li>Freundesliste & Positions-Anzeige</li>
-                <li>Nukte nach Tod</li>
-                <li>Upgrades kaufen</li>
+                <li>Maustaste oder Pfeiltasten → steuere deine Schlange</li>
+                <li>Sammle gelbe Punkte → wachse!</li>
+                <li>Vermeide andere Schlangen – bei Kollision stirbst du</li>
+                <li>Tote Schlangen werden zu Nukten – sammle sie!</li>
+                <li>Im Shop kaufe Upgrades mit Punkten</li>
             </ul>
         </div>
     </div>
 
     <!-- Spielbereich -->
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <canvas id="gameCanvas" width="1200" height="800"></canvas>
+
+    <!-- UI Overlay -->
+    <div id="uiOverlay">
+        <div id="score">Punkte: <span id="points">0</span></div>
+        <div id="length">Länge: <span id="length">5</span></div>
+        <div id="rank">Rang: <span id="rank">–</span></div>
+        <button id="shopBtn">🛒 Shop</button>
+        <button id="friendsBtn">👥 Freunde</button>
+    </div>
+
+    <!-- Shop -->
+    <div id="shop" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeShop()">&times;</span>
+            <h2>🛒 Punkte-Shop</h2>
+            <div class="shop-item">
+                <span>⚡ Geschwindigkeit +1</span>
+                <span class="price">500</span>
+                <button onclick="buyUpgrade('speed')">Kaufen</button>
+            </div>
+            <div class="shop-item">
+                <span>📏 Größe +1</span>
+                <span class="price">300</span>
+                <button onclick="buyUpgrade('size')">Kaufen</button>
+            </div>
+            <div class="shop-item">
+                <span>🤖 Bot (sammelt für dich)</span>
+                <span class="price">1000</span>
+                <button onclick="buyBot()">Kaufen</button>
+            </div>
+            <div class="shop-item">
+                <span>🛡️ Schild (10s)</span>
+                <span class="price">800</span>
+                <button onclick="buyPowerup('shield')">Kaufen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Freunde -->
+    <div id="friendsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeFriends()">&times;</span>
+            <h2>👥 Freunde</h2>
+            <div id="friendsList">
+                <p>Keine Freunde gefunden.</p>
+            </div>
+            <input type="text" id="friendSearch" placeholder="Suche nach Namen...">
+            <button onclick="addFriend()">+ Freund hinzufügen</button>
+        </div>
+    </div>
 
     <!-- Socket.io CDN -->
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
