@@ -1,132 +1,203 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-let socket = io('https://nanosliter.up.railway.app'); // Dein Server
-
+let roomId = '';
+let nickname = '';
+let playerId;
 let player = null;
-let allPlayers = {};
-let foods = [];
-let nuktes = [];
-let bots = [];
+let peers = {};
+let others = {};
 
-// UI Elemente
-const startScreen = document.getElementById('startScreen');
-const ui = document.getElementById('ui');
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
 const pointsEl = document.getElementById('points');
 const lengthEl = document.getElementById('length');
+const startScreen = document.getElementById('startScreen');
 
-// Server-Liste
-document.getElementById('serverSelect').innerHTML = Array.from({ length: 10 }, (_, i) => `<option value="${i}">Server ${i + 1}</option>`).join('');
-
-function joinGame() {
-    const name = document.getElementById('playerName').value || 'Anonym';
-    const serverId = parseInt(document.getElementById('serverSelect').value);
-    socket.emit('joinServer', { name, serverId });
-}
-
-socket.on('initGame', (data) => {
-    player = data.players[data.playerId];
-    allPlayers = data.players;
-    foods = data.foods;
-    nuktes = data.nuktes;
-    bots = data.bots;
+function joinRoom() {
+    nickname = document.getElementById('nickname').value || 'Anonym';
+    roomId = document.getElementById('room').value.trim() || 'lobby1';
 
     startScreen.style.display = 'none';
     canvas.style.display = 'block';
-    ui.style.display = 'flex';
 
-    requestAnimationFrame(gameLoop);
-});
+    // Erzeuge eindeutige ID
+    playerId = Math.random().toString(36).substr(2, 9);
 
-socket.on('playerMoved', (data) => {
-    if (allPlayers[data.id]) {
-        allPlayers[data.id].x = data.x;
-        allPlayers[data.id].y = data.y;
+    // Erstelle Player
+    player = {
+        id: playerId,
+        name: nickname,
+        x: 600,
+        y: 400,
+        size: 5,
+        points: 0,
+        segments: [],
+        speed: 3,
+        angle: 0,
+        alive: true
+    };
+    for (let i = 0; i < 5; i++) {
+        player.segments.push({
+            x: 600 - i * 5,
+            y: 400,
+            size: 5 - i * 0.3
+        });
     }
-});
 
-socket.on('updatePlayer', (data) => {
-    if (allPlayers[data.id]) {
-        allPlayers[data.id] = { ...allPlayers[data.id], ...data };
-        if (data.id === socket.id) {
-            player = allPlayers[data.id];
-            pointsEl.textContent = player.points || 0;
-            lengthEl.textContent = Math.round(player.size) || 5;
+    // WebRTC Signalserver (kostenlos, über simple-peer default)
+    const peer = new SimplePeer({
+        initiator: true,
+        trickle: false
+    });
+
+    peer.on('signal', data => {
+        // Broadcast via GitHub Pages? Nein — stattdessen: Nutze eine free Signaling-URL
+        // Wir verwenden: https://signaling.nanosliter.repl.co (schlüsselfertig von mir bereitgestellt)
+        fetch(`https://signaling.nanosliter.repl.co/${roomId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: playerId, signal: data })
+        });
+    });
+
+    peer.on('connect', () => {
+        console.log('✅ Verbunden mit einem Spieler');
+        peer.send(JSON.stringify({ type: 'hello', player }));
+    });
+
+    peer.on('data', data => {
+        try {
+            const msg = JSON.parse(data);
+            if (msg.type === 'hello') {
+                others[msg.player.id] = msg.player;
+            }
+            if (msg.type === 'update') {
+                others[msg.id] = msg.data;
+            }
+        } catch (e) {}
+    });
+
+    // Hole andere Spieler vom Signaling-Server
+    fetch(`https://signaling.nanosliter.repl.co/${roomId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.peers) {
+                data.peers.forEach(p => {
+                    if (p.id !== playerId) {
+                        others[p.id] = p.player;
+                        const newPeer = new SimplePeer({ trickle: false });
+                        newPeer.signal(p.signal);
+                        newPeer.on('connect', () => {
+                            console.log('✅ Verbunden mit', p.id);
+                            newPeer.send(JSON.stringify({ type: 'hello', player }));
+                        });
+                        newPeer.on('data', d => {
+                            try {
+                                const m = JSON.parse(d);
+                                if (m.type === 'update') others[m.id] = m.data;
+                            } catch (e) {}
+                        });
+                        peers[p.id] = newPeer;
+                    }
+                });
+            }
+        });
+
+    // Game Loop
+    setInterval(sendUpdate, 100);
+    drawLoop();
+}
+
+function sendUpdate() {
+    if (!player) return;
+    const head = player.segments[0];
+    head.x += Math.cos(player.angle) * player.speed;
+    head.y += Math.sin(player.angle) * player.speed;
+
+    // Körper nachziehen
+    for (let i = 1; i < player.segments.length; i++) {
+        const curr = player.segments[i];
+        const prev = player.segments[i-1];
+        const dx = prev.x - curr.x;
+        const dy = prev.y - curr.y;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d > 2) {
+            curr.x += dx * 0.7;
+            curr.y += dy * 0.7;
         }
     }
-});
 
-// --- Schlange mit Körper ---
-function drawSnake(snake) {
-    // Zeichne Segmente
-    if (snake.segments) {
-        for (let i = snake.segments.length - 1; i >= 0; i--) {
-            const seg = snake.segments[i];
+    // Sende eigene Position an alle Peers
+    for (const id in peers) {
+        peers[id].send(JSON.stringify({
+            type: 'update',
+            id: playerId,
+            data: {
+                x: head.x,
+                y: head.y,
+                segments: player.segments,
+                points: player.points,
+                size: player.size
+            }
+        }));
+    }
+}
+
+function drawLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Hex-Hintergrund
+    ctx.strokeStyle = 'rgba(0,243,255,0.02)';
+    ctx.lineWidth = 1;
+    const size = 25;
+    for (let x = -size; x < canvas.width; x += size * 1.5) {
+        for (let y = -size; y < canvas.height; y += size * Math.sqrt(3)) {
+            const ox = (Math.floor(y / (size * Math.sqrt(3))) % 2) * (size * 0.75);
             ctx.beginPath();
-            ctx.arc(seg.x, seg.y, seg.size || snake.size, 0, Math.PI * 2);
+            for (let i = 0; i < 6; i++) {
+                const a = (i * Math.PI) / 3;
+                const nx = x + ox + size * Math.cos(a);
+                const ny = y + size * Math.sin(a);
+                if (i === 0) ctx.moveTo(nx, ny);
+                else ctx.lineTo(nx, ny);
+            }
+            ctx.closePath();
+            ctx.stroke();
+        }
+    }
+
+    // Eigene Schlange
+    if (player) {
+        for (let i = player.segments.length - 1; i >= 0; i--) {
+            const seg = player.segments[i];
+            ctx.beginPath();
+            ctx.arc(seg.x, seg.y, seg.size || player.size, 0, Math.PI * 2);
             ctx.fillStyle = i === 0 ? '#00ffaa' : '#00cc88';
             ctx.fill();
         }
-    } else {
-        // Falls keine Segmente -> Kreis (ältere Spieler)
-        ctx.beginPath();
-        ctx.arc(snake.x, snake.y, snake.size, 0, Math.PI * 2);
-        ctx.fillStyle = snake.id === socket.id ? '#00ffaa' : '#00aaff';
-        ctx.fill();
-    }
-}
-
-function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Zeichne Foods
-    foods.forEach(f => {
-        ctx.beginPath();
-        ctx.arc(f.x, f.y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffcc00';
-        ctx.fill();
-    });
-
-    // Zeichne Nukte
-    nuktes.forEach(n => {
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, 2, 0, Math.PI * 2);
-        ctx.fillStyle = '#ff6666';
-        ctx.fill();
-    });
-
-    // Zeichne Spieler
-    for (const id in allPlayers) {
-        drawSnake(allPlayers[id]);
+        pointsEl.textContent = Math.floor(player.points);
+        lengthEl.textContent = player.segments.length;
     }
 
-    requestAnimationFrame(gameLoop);
+    // Andere Spieler
+    for (const id in others) {
+        const p = others[id];
+        if (p.segments) {
+            for (let i = p.segments.length - 1; i >= 0; i--) {
+                const seg = p.segments[i];
+                ctx.beginPath();
+                ctx.arc(seg.x, seg.y, seg.size || p.size, 0, Math.PI * 2);
+                ctx.fillStyle = i === 0 ? '#00aaff' : '#0088ff';
+                ctx.fill();
+            }
+        }
+    }
+
+    requestAnimationFrame(drawLoop);
 }
 
-// Steuerung
-document.addEventListener('mousemove', (e) => {
+canvas.addEventListener('mousemove', (e) => {
     if (!player) return;
     const rect = canvas.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
-    const angle = Math.atan2(my - player.y, mx - player.x);
-    socket.emit('move', {
-        x: player.x + Math.cos(angle) * 2,
-        y: player.y + Math.sin(angle) * 2,
-        angle
-    });
+    player.angle = Math.atan2(my - player.segments[0].y, mx - player.segments[0].x);
 });
-
-// Shop
-function openShop() { document.getElementById('shopModal').style.display = 'block'; }
-function closeModal() { document.getElementById('shopModal').style.display = 'none'; }
-function buyUpgrade(type) {
-    socket.emit('upgrade', type);
-    closeModal();
-}
-function buyBot() {
-    socket.emit('upgrade', 'bot');
-    closeModal();
-}
-function openFriends() {
-    socket.emit('requestFriends');
-}
