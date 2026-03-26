@@ -51,7 +51,7 @@ function joinRoom() {
     peer.on('signal', data => {
         // Broadcast via GitHub Pages? Nein — stattdessen: Nutze eine free Signaling-URL
         // Wir verwenden: https://signaling.nanosliter.repl.co (schlüsselfertig von mir bereitgestellt)
-        fetch(`https://signaling.nanosliter.repl.co/${roomId}`, {
+        fetch(`https://nanosliter-signaling.repl.co/${roomId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: playerId, signal: data })
@@ -76,7 +76,7 @@ function joinRoom() {
     });
 
     // Hole andere Spieler vom Signaling-Server
-    fetch(`https://signaling.nanosliter.repl.co/${roomId}`)
+    fetch(`https://nanosliter-signaling.repl.co/${roomId}`)
         .then(res => res.json())
         .then(data => {
             if (data && data.peers) {
