@@ -1,6 +1,6 @@
 {
-  "name": "nano-snake-game",
-  "version": "1.0.0",
+  "name": "nano-sliter",
+  "version": "2.1.0",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
