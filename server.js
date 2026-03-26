@@ -6,16 +6,20 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: "*",
+        origin: ["https://nanosliter.github.io", "http://localhost:5173"],
         methods: ["GET", "POST"]
-.use(express.static('.'));
+    }
+});
 
-// Globale Spieleinstellungen
+// Serve static files from current directory
+app.use(express.static('.'));
+
+// Game data
 let games = {};
 const SERVER_COUNT = 10;
 const MAX_PLAYERS_PER_SERVER = 15;
 
-// Initialisiere alle Server
+// Initialize servers
 for (let i = 0; i < SERVER_COUNT; i++) {
     games[i] = {
         players: {},
@@ -25,7 +29,7 @@ for (let i = 0; i < SERVER_COUNT; i++) {
         lastFoodGen: Date.now()
     };
 
-    // Start-Nahrung
+    // Add initial food
     for (let j = 0; j < 200; j++) {
         games[i].foods.push({
             x: Math.random() * 1000 + 100,
@@ -35,9 +39,13 @@ for (let i = 0; i < SERVER_COUNT; i++) {
     }
 }
 
-// Verbindungshandler
+// Helper: distance
+function dist(a, b) {
+    return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+}
+
 io.on('connection', (socket) => {
-    console.log('Spieler verbunden:', socket.id);
+    console.log('✅ Spieler verbunden:', socket.id);
 
     socket.on('joinServer', ({ name, serverId }) => {
         const game = games[serverId];
@@ -46,30 +54,29 @@ io.on('connection', (socket) => {
             return;
         }
 
-        // Neuer Spieler mit Schlange
+        // Create player with snake segments
+        const =        for (let i = 0; i < 5; i++) {
+            segments.push({
+                x: Math.random() * 800 + 100,
+                y: Math.random() * 400 + 100,
+                size: 5 - i * 0.3
+            });
+        }
+
         game.players[socket.id] = {
             id: socket.id,
-            name: name,
-            x: Math.random() * 800 + 100,
-            y: Math.random() * 400 + 100,
+            name: name || 'Anonym',
+            x: segments[0].x,
+            y: segments[0].y,
             angle: 0,
             points: 0,
             size: 5,
             alive: true,
             upgrades: { speed: 1, size: 1 },
-            segments: [{ x: 400, y: 300, size: 5 }]
+            segments: segments
         };
 
-        // Erzeuge Anfangssegmente
-        for (let i = 1; i < 5; i++) {
-            game.players[socket.id].segments.push({
-                x: 400 - i * 5,
-                y: 300,
-                size: 5 - i * 0.2
-            });
-        }
-
-        socket.joinId}`);
+        socket.join(`server-${serverId}`);
         socket.serverId = serverId;
 
         socket.emit('initGame', {
@@ -79,6 +86,8 @@ io.on('connection', (socket) => {
             nuktes: game.nuktes,
             bots: game.bots
         });
+
+        console.log(`🎮 Spieler ${name} joined server ${serverId}`);
     });
 
     socket.on('move', (data) => {
@@ -86,30 +95,62 @@ io.on('connection', (socket) => {
         if (!game || !game.players[socket.id]) return;
 
         const player = game.players[socket.id];
+        if (!player.alive) return;
+
         player.x = data.x;
         player.y = data.y;
         player.angle = data.angle;
 
-        // Update Segmente (nachziehen)
-        const head = player.segments[0];
-        head.x = player.x;
-        head.y = player.ylet i = 1; i < player.segments.length; i++) {
+        // Update head segment
+        if (player.segments.length > 0) {
+            player.segments[0].x = player.x;
+            player.segments[0].y = player.y;
+        }
+
+        // Pull body segments
+        for (let i = 1; i < player.segments.length; i++) {
             const curr = player.segments[i];
             const prev = player.segments[i - 1];
             const dx = prev.x - curr.x;
-            const dy = prev;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist > 2) {
+            const dy = prev.y - curr.y;
+            const d = Math.sqrt(dx * dx + dy * dy);
+            if (d > 2) {
                 curr.x += dx * 0.7;
                 curr.y += dy * 0.7;
             }
         }
 
+        // Broadcast
         socket.to(`server-${socket.serverId}`).emit('playerMoved', {
             id: socket.id,
             x: data.x,
             y: data.y,
             angle: data.angle
+        });
+
+        // Check food collision
+        game.foods = game.foods.filter(food => {
+            if (dist(player, food) < player.size + 4) {
+                player.points += 10;
+                player.size += 02;
+                player.segments.push({
+                    x: player.segments[player.segments.length - 1].x,
+                    y: player.segments[player.segments.length - 1].y,
+                    size: Math.max(1, player.size - player.segments.length * 0.1)
+                });
+                return false;
+            }
+            return true;
+        });
+
+        // Check nukte collision
+        game.nuktes = game.nuktes.filter(nukte => {
+            if (dist(player, nukte) < player.size + 2) {
+                player.points += 1;
+                player.size += 0.05;
+                return false;
+            }
+            return true;
         });
     });
 
@@ -124,12 +165,14 @@ io.on('connection', (socket) => {
             player.segments.push({
                 x: player.segments[player.segments.length - 1].x,
                 y: player.segments[player.segments.length - 1].y,
-                size: player.size - player.segments.length * 0.1
+                size: Math.max(1, player.size - player.segments.length * 0.1)
             });
+            socket.emit('updatePlayer', { points: player.points, size: player.size });
         }
         if (type === 'speed' && player.points >= 500) {
             player.points -= 500;
             player.upgrades.speed += 0.5;
+            socket.emit('updatePlayer', { points: player.points });
         }
         if (type === 'bot' && player.points >= 1000) {
             player.points -= 1000;
@@ -139,38 +182,45 @@ io.on('connection', (socket) => {
                 y: player.y,
                 size: player.size * 0.5
             });
+            socket.emit('updatePlayer', { points: player.points });
         }
-
-        socket.emit('updatePlayer', { id: socket.id, points: player.points, size: player.size });
-    });
-
-    socket.on('requestFriends', () => {
-        socket.emit('friendLocations', []);
     });
 
     socket.on('disconnect', () => {
         const game = games[socket.serverId];
         if (game && game.players[socket.id]) {
+            const player = game.players[socket.id];
+            if (player.alive) {
+                // Drop nuktes on death
+                for (let i = 0; i < Math.floor(player.points / 10); i++) {
+                    game.nuktes.push({
+                        x: player.x + (Math.random() - 0.5) * 20,
+                        y: player.y + (Math.random() - 0.5) * 20
+                    });
+                }
+            }
             delete game.players[socket.id];
+            console.log(`💀 Spieler ${socket.id} disconnected`);
         }
     });
 });
 
-// Food-Generator
+// Auto-generate food
 setInterval(() => {
     for (let i = 0; i < SERVER_COUNT; i++) {
-        if (Date.now() - games[i].lastFoodGen > 10000) {
-            games[i].foods.push({
+        const game = games[i];
+        if (Date.now() - game.lastFoodGen > 10000) {
+            game.foods.push({
                 x: Math.random() * 1000 + 100,
                 y: Math.random() * 500 + 50,
                 id: Date.now()
             });
-            games[i].lastFoodGen = Date.now();
+            game.lastFoodGen = Date.now();
         }
     }
 }, 1000);
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Server läuft auf Port ${PORT}`);
+    console.log(`🚀 Server läuft auf Port ${PORT}`);
 });
