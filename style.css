@@ -1,79 +1,158 @@
-/* Grundlegende Seitenstile */
+/* Globale Styles */
+:root {
+    --bg: #0a0f1d;
+    --accent: #00f3ff;
+    --glow: #00f3ff;
+    --text: #fff;
+}
+
 body {
     margin: 0;
     padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #fff;
+    background: var(--bg);
+    font-family: 'Segoe UI', sans-serif;
+    color: var(--text);
     overflow: hidden;
+    height: 100vh;
 }
 
 /* Startbildschirm */
 #startScreen {
-    text-align: center;
-    background: rgba(0, 0, 0, 0.: 30px;
-    border-radius: 15px;
-    box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
-    backdrop-filter: blur(10px);
-    max-width: 400px;
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    animation: glow 2s infinite alternate;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    background: rgba(10, 15, 29, 0.8);
 }
 
-@keyframes glow {
-    from {
-        box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-    }
-    to {
-        box-shadow: 0 0 40px rgba(0, 255, 255, 0.8);
-    }
+.logo h1 {
+    font-size: 4rem;
+    background: linear-gradient(45deg, #00f3ff, #a0ff00);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+    margin-bottom: 10px;
 }
 
-#startScreen h1 {
-    font-size: 2.5rem;
-    margin-bottom: 20px;
-    color: #00ffcc;
-    text-shadow: 0 0 10px rgba(0, 255, 204, 0.7);
-}
-
-#startScreen input, #startScreen select {
-    width: 80%;
+.input-group input, .input-group select {
+    width: 300px;
     padding: 12px;
-    margin: 10px 0;
-    border: 2px solid #00ffcc;
+    margin: 8px 0;
+    border: 2px solid var(--accent);
     border-radius: 8px;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.5);
     color: white;
-    font-size: 1rem;
+    font-size: 1.1rem;
 }
 
-#startScreen button {
-    background: linear-gradient(45deg, #00c6ff, #0072ff);
-    color: white;
+.input-group button {
+    background: linear-gradient(45deg, #00f3ff, #a0ff00);
+    color: #000;
     border: none;
-    padding: 12px 30px;
-    font-size: 1.1rem;
+    padding: 14px 30px;
+    font-size: 1.2rem;
     border-radius: 50px;
     cursor: pointer;
     margin-top: 15px;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 0 15px rgba(0, 114, 255, 0.6);
+    font-weight: bold;
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.7);
 }
 
-#startScreen button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 25px rgba(0, 114, 255, 0.9);
+.features ul {
+    max-width: 500px;
+    text-align: left;
+    margin: 20px auto;
+    padding-left: 20px;
 }
 
-/* Spielcanvas */
+.features li {
+    margin: 8px 0;
+    line-height: 1.5;
+}
+
+/* Canvas */
 #gameCanvas {
-    border: 3px solid #00ffcc;
-    border-radius: 8px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     display: none;
-    box-shadow: 0 0 30px rgba(0, 255, 204, 0.5);
-    background-color: #0f1c2e;
+    background: #050815;
 }
+
+/* UI Overlay */
+#uiOverlay {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    gap: 20px;
+    z-index: 10;
+}
+
+#uiOverlay button {
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: 1px solid var(--accent);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 200;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+    background: #0a0f1d;
+    margin: 10% auto;
+    padding: 30px;
+    width: 80%;
+    max-width: 500px;
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    position: relative;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.shop-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 6px;
+    margin: 8px 0;
+}
+
+.price {
+    color: #ffcc00;
+    font-weight: bold;
+}
+
+/* Hexagon-Hintergrund (optional – wird in JS gezeichnet) */
